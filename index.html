@@ -2,9 +2,17 @@
 <html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <title></title>
+		<script type="text/javascript" src="jquery.js"></script>
+		<script type="text/javascript" src="foolproofr.js"></script>
+        <link href="foolproofr.css" rel="stylesheet" type="text/css" />
+        <title>Testing FoOlProofr</title>
     </head>
     <body>
-		<img src="" />
+		<div id="proofrme"><img src="image.jpg" /></div>
+		<script type="text/javascript">
+			jQuery(document).ready(function(){
+				$("#proofrme").foolproofr();
+			});
+		</script>
     </body>
 </html>
