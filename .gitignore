@@ -1,6 +1,6 @@
-.DS_Store 
 *.pyc
 .svn
 nbproject
 Thumbs.db
 Desktop.ini
+.DS_Store

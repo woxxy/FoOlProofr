@@ -8,10 +8,12 @@
         <title>Testing FoOlProofr</title>
     </head>
     <body>
-		<div id="proofrme"><img src="image.jpg" /></div>
+		<div id="proofrme" style="margin:0 auto;"><img src="image.jpg" /></div>
 		<script type="text/javascript">
-			jQuery(document).ready(function(){
-				$("#proofrme").foolproofr();
+			$(window).load(function(){
+				$("#proofrme").foolproofr({
+					fitImage: true
+				});
 			});
 		</script>
     </body>

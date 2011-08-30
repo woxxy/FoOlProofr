@@ -1,8 +1,3 @@
-// jQuery Plugin Boilerplate
-// A boilerplate for jumpstarting jQuery plugins development
-// version 1.1, May 14th, 2011
-// by Stefan Gabos
-
 (function($) {
 
 	$.foolproofr = function(element, options) {
@@ -12,7 +7,9 @@
 
 		var plugin = this;
 
-		plugin.settings = {}
+		plugin.settings = {
+			fitImage: false
+		}
 
 		var $element = $(element),
 		element = element;
@@ -21,14 +18,21 @@
 
 		plugin.init = function() {
 			plugin.settings = $.extend({}, defaults, options);
-			//$('<div id="foolreadr_panel">')
-			// bind the element selected
+			
 			$element.css({
 				position: "relative"
 			});
+			if(plugin.settings.fitImage)
+			{
+				$element.css({
+					width: $element.find("img").width() + "px",
+					height: $element.find("img").height() + "px"
+				});
+			}
 			$element.find("img").mousedown(function(e){
 				e.preventDefault()
 			});
+			
 			toggleMousedown(true);
 			
 		}
@@ -36,11 +40,27 @@
 		var toggleMousedown = function(bool) {
 			if(bool)
 			{
+				$(document).unbind('mouseup');
+				$element.unbind('mousemove');
 				$element.mousedown(function(e){ 
-					e.preventDefault();
-					if(e.which == 1)
+					
+					
+					if($(e.target).hasClass("foolproofr_dragger"))
 					{
-						dragging(e);
+						e.preventDefault();
+						draggingDragger(e);
+						return true;
+					}
+					
+					if($(e.target).hasClass("foolproofr_box") || $(e.target).parents(".foolproofr_box").length > 0)
+					{
+						
+					}
+					else if(e.which == 1)
+					{
+						e.preventDefault(); 
+						draggingBox(e);
+						return true;
 					}
 				});
 			}
@@ -50,12 +70,13 @@
 			}
 		}
 
-		var dragging = function(e) {
+		var draggingBox = function(e) {
 			toggleMousedown(false);
 			var offset = $element.offset();
+			var urelativeX, urelativeY;
 			var relativeX = (e.pageX - offset.left);
 			var relativeY = (e.pageY - offset.top);
-			var tempbox = $('<div class="foolslider_tempbox">').css({
+			var tempbox = $('<div class="foolproofr_tempbox">').css({
 				position: "absolute",
 				left: relativeX + "px",
 				top: relativeY + "px",
@@ -65,29 +86,126 @@
 			}).appendTo($element);
 			
 			$element.mousemove(function(u){
-				var uoffset = $element.offset();
-				var urelativeX = (u.pageX - uoffset.left);
-				var urelativeY = (u.pageY - uoffset.top);
-				if(urelativeX - relativeX > 30 && urelativeY - relativeY > 30)
+				urelativeX = (u.pageX - offset.left);
+				urelativeY = (u.pageY - offset.top);
+				
+				// the bonduaries are touched easily and the mouse lag makes the box go out
+				// let's put a hard limit to the width and height if they touch the border
+				if(urelativeX > $element.width()-2)
+				{
+					urelativeX = $element.width() - 2;
+				}
+				if(urelativeY > $element.height()-2)
+				{
+					urelativeY = $element.height() - 2;
+				}
+				if(urelativeX - relativeX > 60 && urelativeY - relativeY > 60 && urelativeX < $element.width() && urelativeY < $element.height())
 				{
 					tempbox.css({
 						width: (urelativeX - relativeX) + "px",
-						height: (urelativeY - relativeY) + "px"					
+						height: (urelativeY - relativeY) + "px",
+						border: "1px dashed #5BD84F"
+					});
+				}
+				else
+				{
+					tempbox.css({
+						width: "30px",
+						height: "30px",
+						border: "1px dashed red"
 					});
 				}
 			});
-			$element.mouseup(function(u){
-				var uoffset = $element.offset();
-				var urelativeX = (u.pageX - uoffset.left);
-				var urelativeY = (u.pageY - uoffset.top);
-				if(urelativeX - relativeX > 30 && urelativeY - relativeY > 30)
+			$(document).mouseup(function(u){
+				toggleMousedown(true);
+				tempbox.remove();
+				if(urelativeX - relativeX > 60 && urelativeY - relativeY > 60)
 				{
-					alert(urelativeX - relativeX);
-					
+					createBox(relativeY, relativeX, urelativeX - relativeX, urelativeY - relativeY);
 				}
-				$element.unbind('mouseup').unbind('mousemove');
+			});
+		}
+		
+		// the top bar for dragging the boxes
+		var draggingDragger = function(e) {
+			var elem = $(e.target);
+			var elemBox = elem.parents(".foolproofr_box");
+			var elemBoxTop = parseInt(elemBox.css('top').replace('px', ''));
+			var elemBoxLeft = parseInt(elemBox.css('left').replace('px', ''));
+			var offset = $element.offset();
+			var urelativeX, urelativeY;
+			var relativeX = (e.pageX - offset.left);
+			var relativeY = (e.pageY - offset.top);
+			
+			$element.mousemove(function(u){
+				urelativeX = (u.pageX - offset.left);
+				urelativeY = (u.pageY - offset.top);
+				var relTop = elemBoxTop + urelativeY - relativeY;
+				var relLeft = elemBoxLeft + urelativeX - relativeX;
+				if(relTop <= 0)
+				{
+					relTop = 0;
+				}
+				
+				if(relTop + elemBox.height() > $element.height())
+				{
+					relTop = $element.height() - elemBox.height() - 2;
+				}
+				
+				if(relLeft <= 0)
+				{
+					relLeft = 0;
+				}
+				
+				if(relLeft + elemBox.width() > $element.width())
+				{
+					relLeft = $element.width() - elemBox.width() - 2;
+				}
+									
+				elemBox.css({
+					top: relTop + "px",
+					left: relLeft + "px"
+				});
+			});
+			
+			$(document).mouseup(function(u){
 				toggleMousedown(true);
 			});
+		}
+		
+		var createBox = function(top, left, width, height){
+			var boxElem = $("<div />").addClass('foolproofr_box').css({
+				top: top + "px",
+				left: left + "px",
+				width: width + "px",
+				height: height + "px"
+			});
+			var dragger = $("<div />").addClass("foolproofr_dragger").html("Necrophantasia");
+			var resizer = $("<div />").addClass("foolproofr_resizer");
+			var textarea = $("<textarea />").addClass("foolproofr_textarea");
+			boxElem.append(dragger).append(resizer).append(textarea);
+			
+			boxElem.appendTo($element);
+			boxElem.find(".foolproofr_textarea").css({
+				height: (boxElem.height() - dragger.height() - 8) + "px"
+			});
+			
+			// update all textarea focus function
+			$(".foolproofr_textarea").each(function(index, el) {
+				$(el).focus(function(a){
+					$(a.target).parents(".foolproofr_box").addClass('focused');
+				});
+			});
+			
+			// the focusout too
+			$(".foolproofr_textarea").each(function(index, el) {
+				$(el).focusout(function(a){
+					$(a.target).parents(".foolproofr_box").removeClass('focused');
+				});
+			});
+			
+			// put the focus on the just created box
+			boxElem.find(".foolproofr_textarea").focus();
 		}
 
 		plugin.init();
