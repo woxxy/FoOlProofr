@@ -8,8 +8,22 @@
 		var plugin = this;
 
 		plugin.settings = {
-			fitImage: false
+			fitImage: false,
+			createUrl: "",
+			updateUrl: "",
+			deleteUrl: ""
 		}
+		
+		/*
+		  
+		 
+		 
+		 
+		 
+		 
+		 
+		   
+		 */
 
 		var $element = $(element),
 		element = element;
@@ -49,7 +63,14 @@
 					{
 						e.preventDefault();
 						draggingDragger(e);
-						return true;
+						return false;
+					}
+					
+					if($(e.target).hasClass("foolproofr_resizer"))
+					{
+						e.preventDefault();
+						draggingResizer(e);
+						return false;
 					}
 					
 					if($(e.target).hasClass("foolproofr_box") || $(e.target).parents(".foolproofr_box").length > 0)
@@ -60,7 +81,7 @@
 					{
 						e.preventDefault(); 
 						draggingBox(e);
-						return true;
+						return false;
 					}
 				});
 			}
@@ -128,6 +149,7 @@
 		
 		// the top bar for dragging the boxes
 		var draggingDragger = function(e) {
+			toggleMousedown(false);
 			var elem = $(e.target);
 			var elemBox = elem.parents(".foolproofr_box");
 			var elemBoxTop = parseInt(elemBox.css('top').replace('px', ''));
@@ -173,6 +195,60 @@
 			});
 		}
 		
+		var draggingResizer = function(e){
+			toggleMousedown(false);
+			var elem = $(e.target);
+			var elemBox = elem.parents(".foolproofr_box");
+			var elemBoxWidth = elemBox.width();
+			var elemBoxHeight = elemBox.height();
+			var elemBoxTop = parseInt(elemBox.css('top').replace('px', ''));
+			var elemBoxLeft = parseInt(elemBox.css('left').replace('px', ''));
+			var offset = $element.offset();
+			var urelativeX, urelativeY;
+			var relativeX = (e.pageX - offset.left);
+			var relativeY = (e.pageY - offset.top);
+			
+			$element.mousemove(function(u){
+				urelativeX = (u.pageX - offset.left);
+				urelativeY = (u.pageY - offset.top);
+				var relHeight = elemBoxHeight + urelativeY - relativeY;
+				var relWidth = elemBoxWidth + urelativeX - relativeX;
+				
+				if(relWidth <= 60)
+				{
+					relWidth = 60;
+				}
+				
+				if(relHeight <= 60)
+				{
+					relHeight = 60;
+				}
+				
+				if(relWidth + elemBoxLeft >= $element.width())
+				{
+					relWidth = $element.width() - elemBoxLeft - 2;
+				}
+				
+				if(relHeight + elemBoxTop >= $element.height())
+				{
+					relHeight = $element.height() - elemBoxTop - 2;
+				}
+									
+				elemBox.css({
+					width: relWidth + "px",
+					height: relHeight + "px"
+				});
+				
+				elemBox.find(".foolproofr_textarea").css({
+					height: (elemBox.height() - elemBox.find(".foolproofr_dragger").height() - 8) + "px"
+				});
+			});
+			
+			$(document).mouseup(function(u){
+				toggleMousedown(true);
+			});
+		}
+		
 		var createBox = function(top, left, width, height){
 			var boxElem = $("<div />").addClass('foolproofr_box').css({
 				top: top + "px",
@@ -180,7 +256,8 @@
 				width: width + "px",
 				height: height + "px"
 			});
-			var dragger = $("<div />").addClass("foolproofr_dragger").html("Necrophantasia");
+			var remover = $("<div />").addClass("foolproofr_remover").html("X");
+			var dragger = $("<div />").addClass("foolproofr_dragger").append(remover).append("Necrophantasia");
 			var resizer = $("<div />").addClass("foolproofr_resizer");
 			var textarea = $("<textarea />").addClass("foolproofr_textarea");
 			boxElem.append(dragger).append(resizer).append(textarea);
@@ -206,6 +283,10 @@
 			
 			// put the focus on the just created box
 			boxElem.find(".foolproofr_textarea").focus();
+		}
+		
+		var removeBox = function() {
+			
 		}
 
 		plugin.init();
